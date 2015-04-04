@@ -1,0 +1,6 @@
+[GLOBAL]
+Username: sample@gmail.com
+Password: sample1234
+mailbox: INBOX
+filter: ALL
+rootDir: c:\sample\directory
