@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import imaplib
-import ConfigParser
+import configparser
 import os
 import sys
 import email
 import base64
+
+non_valid_charset = '@.,_<>$%&=\\/¿!|°+´^~¬`:;+*{}[]\n\r\t'
+
+non_valid_charmap = {ord(key): None for key in non_valid_charset}
 
 class Configuration(object):
 
@@ -13,7 +17,7 @@ class Configuration(object):
 	
 	def __init__(self, config_file_name):
 		self.file_name = config_file_name
-		self.parser = ConfigParser.ConfigParser()
+		self.parser = configparser.ConfigParser()
 		self.parser.read(os.path.join(os.path.dirname(sys.argv[0]), self.file_name))
 
 	def __getitem__(self, key):
@@ -31,7 +35,7 @@ class GmailClient(object):
 		
 	def search(self, criteria):
 		search_result = self.connection.search(None, criteria)
-		return search_result[0], [int(id) for id in search_result[1][0].split()]
+		return search_result[0], [id.decode('utf-8') for id in search_result[1][0].split()]
 		
 	def fetch_iterator(self, messages_ids):
 		if messages_ids is None or len(messages_ids) == 0:
@@ -62,7 +66,7 @@ class RawResponse:
 		self.data = data
 		
 	def parsed_mail(self):
-		return email.message_from_string(self.data[0][1] )
+		return email.message_from_bytes(self.data[0][1] )
 
 	def is_ok(self):
 		return self.status == "OK"
@@ -74,16 +78,20 @@ class RawResponse:
 	def save_to_file(self):
 		rootDir = configuration["rootDir"]
 		mail = self.parsed_mail()
-		senderDir = os.path.join(rootDir, mail["From"].translate(None, '@.,_<>$%&=\\/¿!|°+´´}{}'))
+		fromHeader = str(email.header.make_header(email.header.decode_header(mail["From"])))
+		subjectHeader = str(email.header.make_header(email.header.decode_header(mail["Subject"])))
+		print("From:", fromHeader)
+		print("Subject:", subjectHeader)
+		senderDir = os.path.join(rootDir, fromHeader.translate(non_valid_charmap))
 		self.create_dir_if_unexistant(senderDir)
-		currentMailDir = os.path.join(senderDir, mail["Subject"].translate(None, '@*.,_<>$%&=\\/¿!|°+´´}{}'))
+		currentMailDir = os.path.join(senderDir, subjectHeader.translate(non_valid_charmap))
 		self.create_dir_if_unexistant(currentMailDir)
 		for part in mail.walk():
 			if part.get_content_maintype() == 'multipart':
 				continue
 			if part.get('Content-Disposition') is None:
 				continue
-			filename = part.get_filename()
+			filename = str(email.header.make_header(email.header.decode_header(part.get_filename())))
 			att_path = os.path.join(currentMailDir, filename)
 			try:
 				with open(att_path, 'wb') as out:
@@ -97,13 +105,13 @@ configuration = Configuration("config")
 def main():
 	username = configuration["username"]
 	password = configuration["password"]
-	print "logging in as", username
+	print("logging in as", username)
 	client = GmailClient(username, password)
 	client.set_mailbox(configuration["mailbox"])
 	filter = create_filter_search()
-	print "filter", filter
+	print("filter", filter)
 	status, ids = client.search(create_filter_search())
-	print "ids:", ids
+	print("ids:", ids)
 	if status == "OK":
 		for id in ids:
 			process_mail(client, id)
