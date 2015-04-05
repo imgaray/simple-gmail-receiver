@@ -18,7 +18,7 @@ Keep the config file in the same folder as the script. The parameters used in th
 
 #Execution
 You can execute the script either from command line or GUI:
-  -From CLI: navigate to the folder where the script is placed and run "python gmail-client.py"
+  - From CLI: navigate to the folder where the script is placed and run "python gmail-client.py"
   
-  -From GUI: double click on the "gmail-client.py" file. A command prompt will open and execute the script
+  - From GUI: double click on the "gmail-client.py" file. A command prompt will open and execute the script
   
