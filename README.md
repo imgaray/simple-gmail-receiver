@@ -3,7 +3,7 @@ Simple Gmail Client that fetches mail from inbox and downloads its attachments
 
 #Requirements
 The usage of this script requires:
-  - Python 2.7
+  - Python 3.4
   - 2 step validation Disbaled
   - Enabled IMAP access
   - Enabled less secured access from applications
